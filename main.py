@@ -3,13 +3,11 @@ import pypinyin
 import time
 from datas import words, heads, tails
 
+isWord = lambda word: True if word in words else False
+randomWord = lambda: list(words.keys())[random.randint(0, len(words))]
 
-def isWord(word):
-    return True if word in words else False
-
-
-def randomWord():
-    return list(words.keys())[random.randint(0, len(words))]
+# def randomWord():
+#     return list(words.keys())[random.randint(0, len(words))]
 
 
 def getNext(word, israndom=False):
@@ -19,18 +17,22 @@ def getNext(word, israndom=False):
     except:
         return None
     if israndom:
-        next_word = next_words[random.randint(0, len(next_words))]
+        next_word = next_words[random.randint(0, len(next_words)-1)]
     else:
         next_word = next_words[0]
 
     return next_word if next_word else False
 
 
-def getSolitaire(fristword=None, lastword=None, long=5, trytimes=5000):
-    if lastword == None:
-        solitaire = fristword  # 接龙字符串
-        nowword = fristword  # 等待接龙的成语
-        oldwords = []  # 接龙去重
+def getSolitaire(firstword=None, lastword=None, long=5, trytimes=5000):
+    if firstword == None and lastword == None:
+        return None
+    elif lastword == None:
+        solitaire = firstword
+        nowword = firstword
+        oldwords = []
+        if not getNext(nowword, True):
+            return None
         for i in range(long - 1):
             if nowword != getNext(nowword, True) and getNext(nowword) not in oldwords:
                 oldwords.append(nowword)
@@ -42,30 +44,26 @@ def getSolitaire(fristword=None, lastword=None, long=5, trytimes=5000):
                 solitaire += '→' + nowword
         return solitaire
     else:
-        solitaires = []  # 接龙
-        solitaire = fristword
-        nowword = fristword  # 等待接龙的成语
+        solitaires = []
+        solitaire = firstword
+        nowword = firstword
         for WHILE in range(trytimes):
-            nowword = fristword
-            solitaire = fristword
+            nowword = firstword
+            solitaire = firstword
             for i in range(long - 1):
                 nowword = getNext(nowword)
                 if nowword != None:
                     solitaire += '→' + nowword
                 else:
                     break
-            # 比对查找
             s_words = solitaire.split('→')[1:]
             for word in s_words:
                 if pypinyin.pinyin(s_words[-1][0], style=pypinyin.NORMAL)[0][0] == pypinyin.pinyin(lastword[0], style=pypinyin.NORMAL)[0][0]:
                     s_words = s_words[:-1]
                     s_words.append(lastword)
                     right = solitaire.split('→')[0] + '→' + '→'.join(s_words)
+                    return right
                     solitaires.append(right)
-        # 去重
-        ret = []
-        ret = list(set(solitaires))
-        return ret
     return None
 
 
@@ -79,13 +77,15 @@ def isChinese(str):
 def main():
     print('Input "q" to quit, input "tip" to get next word')
     lastword = randomWord()
-    # play solitaire, the frist word is random
+    # play solitaire, the first word is random
     while True:
         # time.sleep(0.5)
         lastpinyin = pypinyin.pinyin(lastword, style=pypinyin.NORMAL)[-1][0]
 
         print('\nNow word: {} ({})'.format(lastword, lastpinyin))
         input_word = input('Input: ')
+        if input_word == "":
+            break
         input_pinyin = pypinyin.pinyin(
             input_word, style=pypinyin.NORMAL)[0][0]
 
@@ -100,13 +100,14 @@ def main():
                 break
 
         elif input_word == 'tip':
-            print("Tip: Next word is %s or %s maybe." % (getNext(lastword, israndom=True), getNext(lastword, israndom=True)))
+            if getNext(lastword, israndom=True):
+                print("Tip: Next word is %s or %s maybe." % (getNext(lastword, israndom=True), getNext(lastword, israndom=True)))
+            else:
+                print('Game Over.')
+                break   
 
         elif input_word == 'q':
             break
-
-        elif input_word == 'h2w':
-            print("You can try to input %s" % getSolitaire(fristword=lastword, lastword="一个顶俩"))
 
         else:
             if isWord(input_word) == True:
